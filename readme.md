@@ -9,7 +9,7 @@ To provide a service broker for local services.
 Each service that will be exposed using the service broker **LocalServiceBroker** which by nature runs in another process, must use **LocalService** from wv-local-service package, for registering in the broker. Please find how to implement it in the readme.md of wv-local-service package.
 
 # How to Use
-`import { LocalServiceBroker } from 'wv-local-service-broker'`
+`import { LocalServiceBroker } from 'wv-local-service-broker'`__
 `LocalServiceBroker.start(/*your arbitrary port number e.g. 777*/);`
 
 
