@@ -5,13 +5,13 @@ import { Server as SocketServer} from "socket.io";
 
 let httpServer: http.Server|null = null;
 
-export enum MessageDirection
+enum MessageDirection
 {
     request = 'request',
     response = 'response',
 }
 
-export interface IRoutedMessage
+interface IRoutedMessage
 {
     dialogId: string | null;
     direction: MessageDirection;
