@@ -23,9 +23,14 @@ interface IRoutedMessage
 
 export class LocalServiceBroker
 {
-    private static _socketServer: SocketServer;
+    private _socketServer!: SocketServer;
 
-    static start(port: number)
+    constructor(public readonly port: number)
+    {
+
+    }
+
+    start()
     {
         httpServer = http.createServer(function (req: any, res: any)
         {
@@ -36,7 +41,7 @@ export class LocalServiceBroker
             res.setHeader('Access-Control-Allow-Headers', '*');
         });
 
-        httpServer.listen(port, () => console.log(`listening http://127.0.0.1:${port}`));
+        httpServer.listen(this.port, () => console.log(`listening http://127.0.0.1:${this.port}`));
         this._socketServer = new SocketServer().listen(httpServer, {
             cors: {
                 origin: "*",
@@ -101,7 +106,7 @@ export class LocalServiceBroker
         }));
     }
 
-    static broadcast(message: string)
+    broadcast(message: string)
     {
         this._socketServer.emit('message', message);
     }

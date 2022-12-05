@@ -10,7 +10,7 @@ Each service that will be exposed using the service broker **LocalServiceBroker*
 
 # How to Use
 `import { LocalServiceBroker } from 'wv-local-service-broker'`<br/>
-`LocalServiceBroker.start(/*your arbitrary port number e.g. 777*/);`
+`new LocalServiceBroker(12345).start();`
 
 
 

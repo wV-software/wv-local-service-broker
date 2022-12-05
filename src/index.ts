@@ -1,5 +1,5 @@
 export * from './LocalServiceBroker';
 
 // import { LocalServiceBroker } from ".";
-// LocalServiceBroker.start(47979);
+// new LocalServiceBroker(47979).start();
 // process.stdin.resume();
