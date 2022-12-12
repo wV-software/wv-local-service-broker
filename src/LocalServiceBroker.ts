@@ -2,6 +2,7 @@
 
 import * as http from 'http';
 import { Server as SocketServer} from "socket.io";
+import { Envelop } from 'wv-local-service';
 
 let httpServer: http.Server|null = null;
 
@@ -11,102 +12,138 @@ enum MessageDirection
     response = 'response',
 }
 
-interface IRoutedMessage
-{
-    dialogId: string | null;
-    direction: MessageDirection;
-    sourceId: string;
-    destinationId: string;
-    remoteProcedureName: string;
-    payload: object;
-}
-
 export class LocalServiceBroker
 {
-    private _socketServer!: SocketServer;
+    private static _socketServer: SocketServer;
+    public static readonly port = 47979;
 
-    constructor(public readonly port: number)
+    static async isPortBusyAsync(port: number): Promise<boolean>
     {
+        return new Promise((resolve) =>
+        {
+            var net = require('net');
+            var server = net.createServer();
+
+            server.once('error', function (err: any)
+            {
+                if (err.code === 'EADDRINUSE')
+                {
+                    // port is currently in use
+                    resolve(true);
+                }
+            });
+
+            server.once('listening', function ()
+            {
+                // close the server if listening doesn't fail
+                server.close();
+                resolve(false);
+            });
+
+            server.listen(port);
+        });
 
     }
 
-    start()
+    static async waitAsync(ms: number): Promise<void>
     {
-        httpServer = http.createServer(function (req: any, res: any)
+        return new Promise<void>((resolve, reject)=>
         {
-            // Set CORS headers
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Access-Control-Request-Method', '*');
-            res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-            res.setHeader('Access-Control-Allow-Headers', '*');
+            setTimeout(resolve, ms);
         });
+    }
 
-        httpServer.listen(this.port, () => console.log(`listening http://127.0.0.1:${this.port}`));
-        this._socketServer = new SocketServer().listen(httpServer, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
+    static async startAsync()
+    {
+        while(true)
+        {
+            if(await this.isPortBusyAsync(this.port))
+            {
+                // var today = new Date();
+                // var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+                
+                // process.stdout.cursorTo(0);
+                // process.stdout.write(`${time}`);
+                await this.waitAsync(1000);
+                continue;
             }
-        });
+
+            httpServer = http.createServer(function (req: any, res: any)
+            {
+                // Set CORS headers
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('Access-Control-Request-Method', '*');
+                res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+                res.setHeader('Access-Control-Allow-Headers', '*');
+            });
     
-        this._socketServer.on('connection', (async (socket) =>
-        {
-            const clientIdBase64:string = (socket.request as any)._query?.clientId;
-
-            if(!clientIdBase64) 
+            httpServer.listen(this.port, () => console.log(`listening http://127.0.0.1:${this.port}`));
+            this._socketServer = new SocketServer().listen(httpServer, {
+                cors: {
+                    origin: "*",
+                    methods: ["GET", "POST"]
+                }
+            });
+        
+            this._socketServer.on('connection', (async (socket) =>
             {
-                console.log('no clientId');
-                socket.send(`close`);
-            }
-            else
-            {
-                const clientId = atob(clientIdBase64);
-                console.log(`>>> connected: ${clientId}`);           
-                this._socketServer.to(clientId).emit('message', 'close');
-                socket.join(clientId);
-            }
-
-            socket.conn.on('close', ()=>
-            {
-                if(clientIdBase64)
+                const clientIdBase64:string = (socket.request as any)._query?.clientId;
+    
+                if(!clientIdBase64) 
                 {
-                    const clientId = atob(clientIdBase64);
-                    console.log(`<<< disconnected: ${clientId}`);         
+                    socket.send(`close`);
+                    console.log('no clientId, connection will close!');
                 }
                 else
                 {
-                    console.log('connection rejected: no query.clientId');
+                    const clientId = atob(clientIdBase64);
+                    console.log(`>>> connected: ${clientId}`);       
+                    this._socketServer.to(clientId).emit('message', 'close');
+                    socket.join(clientId);
                 }
-            });
-
-            socket.conn.on('message', (msg: string)=>
-            {
-                try
-                {
-                    console.warn(`raw message: ${msg}`)
-
-                    if(msg.length < 2) return;
-
-                    msg = msg.substring(1);
-                    const args = JSON.parse(msg) as Array<string>;
-                    msg = args[1];
     
-                    const routedMessage = JSON.parse(msg!) as IRoutedMessage;
-                    if(routedMessage.destinationId)
-                    {
-                        this._socketServer.to(routedMessage.destinationId).emit('message', msg);
-                    }
-                    console.warn(routedMessage);
-                }
-                catch(error: any)
+                socket.conn.on('close', ()=>
                 {
-                    console.error(error);
-                }
-            });
-        }));
+                    if(clientIdBase64)
+                    {
+                        const clientId = atob(clientIdBase64);
+                        console.log(`<<< disconnected: ${clientId}`);         
+                    }
+                    else
+                    {
+                        console.log('connection rejected: no query.clientId');
+                    }
+                });
+    
+                socket.conn.on('message', (msg: string)=>
+                {
+                    try
+                    {
+                        console.warn(`raw message: ${msg}`)
+    
+                        if(msg.length < 2) return;
+    
+                        msg = msg.substring(1);
+                        const args = JSON.parse(msg) as Array<string>;
+                        msg = args[1];
+        
+                        const envelop = JSON.parse(msg!) as Envelop;
+                        if(envelop.destinationServiceName)
+                        {
+                            this._socketServer.to(envelop.destinationServiceName).emit('message', msg);
+                        }
+                        console.warn(envelop);
+                    }
+                    catch(error: any)
+                    {
+                        console.error(error);
+                    }
+                });
+            }));
+        }
     }
 
-    broadcast(message: string)
+    static broadcast(message: string)
     {
         this._socketServer.emit('message', message);
     }

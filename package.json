@@ -1,6 +1,6 @@
 {
 	"name": "wv-local-service-broker",
-	"version": "0.9.6",
+	"version": "0.9.9",
 	"liscense": "",
 	"main": "./dist/index.js",
 	"module": "",
@@ -8,20 +8,21 @@
 	"sourceMap": true,
 	"inlineSourceMap": false,
 	"outDir": "./dist",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "tsc && node ./dist/index"
-	},
+	"_scripts": [],
 	"files": [
 		"./dist/**"
 	],
 	"keywords": [],
 	"dependencies": {
 		"socket.io": "^4.5.4",
-		"typescript": "^4.9.3"
+		"typescript": "^4.9.3",
+		"wv-local-service": "^0.0.15"
 	},
 	"bin": {},
-	"devDependencies": {},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "tsc && node ./dist/index"
+	},
 	"author": "",
 	"license": "ISC"
 }
