@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/wV-software/icons/main/Wv/Product%20Icon/wv_128x128.png) wv-local-service-proker
+![](https://raw.githubusercontent.com/wV-software/icons/main/Wv/Product%20Icon/wv_128x128.png) wv-local-service-broker
 # Purpose
 - It provides an easy way to code means for communication of dynamically created services within the localhost (127.0.0.1).
 - The whole solution is devided between two packages `ws-local-service-broker` and `ws-local-service`.
